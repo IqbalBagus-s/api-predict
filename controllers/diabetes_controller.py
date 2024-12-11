@@ -12,31 +12,34 @@ load_dotenv()
 MODEL_PATH = './models/diabetes_model2.keras'
 BUCKET_NAME = 'bucketgluco'  # Ganti dengan nama bucket Anda
 MODEL_FILE_PATH = 'models/diabetes_model2.keras'  # Path di dalam bucket
-
-# Fungsi untuk mengunduh model dari GCS
-def download_model_from_gcs():
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(BUCKET_NAME)
-    blob = bucket.blob(MODEL_FILE_PATH)
-
-    # Mengunduh model ke direktori lokal
-    blob.download_to_filename(MODEL_PATH)
-    print(f"Model downloaded successfully to {MODEL_PATH}")
+model = None  # Deklarasikan variabel model global
 
 # Load the model
 def load_model():
-    global model
+    global model  # Pastikan menggunakan model global
     try:
-        # Unduh model dari GCS jika model belum ada secara lokal
+        # Jika model belum ada secara lokal, download dari GCS
         if not os.path.exists(MODEL_PATH):
             download_model_from_gcs()
 
-        # Muat model dari file lokal
         model = tf.keras.models.load_model(MODEL_PATH)
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
 
+# Fungsi untuk mengunduh model dari Google Cloud Storage
+def download_model_from_gcs():
+    from google.cloud import storage
+
+    client = storage.Client()
+    bucket_name = "bucketgluco"
+    model_blob_name = "models/diabetes_model2.keras"
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(model_blob_name)
+
+    # Unduh model ke direktori lokal
+    blob.download_to_filename(MODEL_PATH)
+    print("Model downloaded from GCS successfully.")
 
 # Map textual inputs to numeric values
 def parse_input(data):
@@ -70,11 +73,15 @@ def parse_input(data):
 
 # Predict function
 def predict_diabetes(data):
+    global model  # Pastikan mengakses model global
     if not model:
         raise RuntimeError("Model not loaded")
 
     # Parse and validate input
-    parsed_data = parse_input(data)
+    try:
+        parsed_data = parse_input(data)
+    except Exception as e:
+        return {"error": f"Error parsing input data: {str(e)}"}
 
     # Convert parsed data into array
     features = [
@@ -84,19 +91,22 @@ def predict_diabetes(data):
     input_data = [parsed_data[feature] for feature in features]
     input_array = np.array([input_data], dtype=np.float32)
 
-    # Make prediction
-    predictions = model.predict(input_array)
-    predicted_class = np.argmax(predictions[0])
+    try:
+        # Make prediction
+        predictions = model.predict(input_array)
+        predicted_class = np.argmax(predictions[0])
 
-    # Define result descriptions
-    results = [
-        "Normal",
-        "Pra-diabetes",
-        "Controlled Diabetes",
-        "Uncontrolled Diabetes",
-    ]
+        # Define result descriptions
+        results = [
+            "Normal",
+            "Pra-diabetes",
+            "Controlled Diabetes",
+            "Uncontrolled Diabetes",
+        ]
 
-    return {
-        "input": data,
-        "description": results[predicted_class]
-    }
+        return {
+            "input": data,
+            "description": results[predicted_class]
+        }
+    except Exception as e:
+        return {"error": f"Error making prediction: {str(e)}"}

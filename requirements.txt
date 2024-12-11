@@ -2,4 +2,3 @@ Flask
 tensorflow
 mysql-connector-python
 python-dotenv
-numpy

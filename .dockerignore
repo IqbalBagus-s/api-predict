@@ -1,0 +1,10 @@
+# Abaikan virtual environment dan cache
+venv/
+__pycache__/
+*.pyc
+Dockerfile
+# Abaikan file log
+*.log
+
+# Abaikan file sistem
+.DS_Store

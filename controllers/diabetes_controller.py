@@ -1,8 +1,14 @@
 import tensorflow as tf
 import numpy as np
 from models.model_diabetes import save_prediction
+from dotenv import load_dotenv
+import os
 
-MODEL_PATH = './models/diabetes_model2.keras'
+# Load environment variables from .env file
+load_dotenv()
+
+# Get the model path from environment variables
+MODEL_PATH = os.getenv("MODEL_PATH")
 model = None
 
 # Load the model

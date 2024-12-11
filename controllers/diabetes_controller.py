@@ -1,4 +1,5 @@
 import tensorflow as tf
+from google.cloud import storage
 import numpy as np
 from models.model_diabetes import save_prediction
 from dotenv import load_dotenv
@@ -7,9 +8,20 @@ import os
 # Load environment variables from .env file
 load_dotenv()
 
-# Get the model path from environment variables
-MODEL_PATH = os.getenv("MODEL_PATH")
-model = None
+# Konfigurasi untuk menyimpan model lokal sementara
+MODEL_PATH = './models/diabetes_model2.keras'
+BUCKET_NAME = 'bucketgluco'  # Ganti dengan nama bucket Anda
+MODEL_FILE_PATH = 'models/diabetes_model2.keras'  # Path di dalam bucket
+
+# Fungsi untuk mengunduh model dari GCS
+def download_model_from_gcs():
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(BUCKET_NAME)
+    blob = bucket.blob(MODEL_FILE_PATH)
+
+    # Mengunduh model ke direktori lokal
+    blob.download_to_filename(MODEL_PATH)
+    print(f"Model downloaded successfully to {MODEL_PATH}")
 
 # Load the model
 def load_model():

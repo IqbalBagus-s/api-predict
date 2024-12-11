@@ -16,30 +16,40 @@ model = None  # Deklarasikan variabel model global
 
 # Load the model
 def load_model():
-    global model  # Pastikan menggunakan model global
+    global model  # Pastikan variabel global digunakan
     try:
-        # Jika model belum ada secara lokal, download dari GCS
+        # Periksa apakah file model sudah ada di direktori lokal
         if not os.path.exists(MODEL_PATH):
-            download_model_from_gcs()
+            print(f"Model file not found locally at {MODEL_PATH}. Downloading from GCS...")
+            download_model_from_gcs()  # Unduh model dari GCS jika tidak ada
 
-        model = tf.keras.models.load_model(MODEL_PATH)
+        print(f"Loading model from {MODEL_PATH}...")
+        model = tf.keras.models.load_model(MODEL_PATH)  # Muat model dari file lokal
         print("Model loaded successfully.")
     except Exception as e:
-        print(f"Error loading model: {e}")
+        print(f"Error during model loading: {e}")
+
 
 # Fungsi untuk mengunduh model dari Google Cloud Storage
 def download_model_from_gcs():
+    import tensorflow as tf
     from google.cloud import storage
 
     client = storage.Client()
     bucket_name = "bucketgluco"
-    model_blob_name = "models/diabetes_model2.keras"
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(model_blob_name)
+    blob_name = "models/diabetes_model2.keras"
+    local_model_path = MODEL_PATH
 
-    # Unduh model ke direktori lokal
-    blob.download_to_filename(MODEL_PATH)
-    print("Model downloaded from GCS successfully.")
+    try:
+        print(f"Downloading model from GCS: {bucket_name}/{blob_name} to {local_model_path}...")
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.download_to_filename(local_model_path)
+        print("Model downloaded successfully.")
+    except Exception as e:
+        print(f"Error downloading model from GCS: {e}")
+        raise
+
 
 # Map textual inputs to numeric values
 def parse_input(data):

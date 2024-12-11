@@ -27,10 +27,16 @@ def download_model_from_gcs():
 def load_model():
     global model
     try:
+        # Unduh model dari GCS jika model belum ada secara lokal
+        if not os.path.exists(MODEL_PATH):
+            download_model_from_gcs()
+
+        # Muat model dari file lokal
         model = tf.keras.models.load_model(MODEL_PATH)
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
+
 
 # Map textual inputs to numeric values
 def parse_input(data):
